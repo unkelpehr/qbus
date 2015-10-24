@@ -1,229 +1,164 @@
-if (typeof require === 'function') {
-	Qbus = require('../../index.js');
-	expect = require('chai').expect;
+var Qbus = require('../../index.js'),
+	test = require('tape'),
+
+	expectProtos = { 'on': 1, 'once': 1, 'off': 1, 'emit': 1},
+	actualProtos = {},
+	proto,
+
+	expectProps = { 'parse': 1 },
+	actualProps = {},
+	prop,
+
+	noop = function () {};
+
+for (proto in Qbus.prototype) {
+	if (Qbus.prototype.hasOwnProperty(proto)) {
+		actualProtos[proto] = 1;
+	}
 }
 
-describe('1. Basics', function () {
-	var qbus = new Qbus(),
+for (prop in Qbus) {
+	if (Qbus.hasOwnProperty(prop)) {
+		actualProps[prop] = 1;
+	}
+}
 
-		expectProtos = { 'on': 1, 'once': 1, 'off': 1, 'emit': 1},
-		actualProtos = {},
-		proto,
+test('Basics', function (assert) {
 
-		expectProps = { 'parse': 1 },
-		actualProps = {},
-		prop,
+	assert.equal(typeof Qbus, 'function', 'Qbus is a function');
+	assert.equal(Qbus.length, 1, 'Qbus takes one argument');
+	assert.ok(Qbus() instanceof Qbus, 'Qbus can be called without the `new` keyword');
+	assert.deepEqual(expectProtos, actualProtos, 'Qbus has "on", "once", "off" and "emit" as the only prototype methods');
+	assert.deepEqual(expectProps, actualProps, 'Qbus has "parse" as the only property');
 
-		noop = function () {};
+	/**
+	 * .on
+	 */
+	assert.equal(Qbus.prototype.on.length, 2, '.on should take two arguments');
+	assert.throws(function () {
+		var times = 0,
+			expect = 4;
 
-	describe('Qbus', function () {
-		it('Should be a function', function () {
-			expect(Qbus).to.be.a('function');
-		});
+		try { Qbus().on(); } catch (e) { if (e instanceof TypeError) times++; }
+		try { Qbus().on('a'); } catch (e) { if (e instanceof TypeError) times++; }
+		try { Qbus().on(null, 'a'); } catch (e) { if (e instanceof TypeError) times++; }
+		try { Qbus().on(noop, 'a'); } catch (e) { if (e instanceof TypeError) times++; }
 
-		it('Should take one argument', function () {
-			expect(Qbus.length).to.equal(1);
-		});
+		if (times === expect) {
+			throw 'ok';
+		}
+	}, '.on throws TypeError on anything other than <String|RegExp, Function>');
 
-		it('Should have be optionally called with "new"', function () {
-			expect(new Qbus()).to.be.instanceof(Qbus);
-			expect(Qbus()).to.be.instanceof(Qbus);
-		});
+	assert.doesNotThrow(function () {
+		Qbus().on('a', noop);
+		Qbus().on(/[a-z]/, noop);
+	}, '.on does not throw with <String|RegExp, Function>')
 
-		it('Should have "on", "once", "off" and "emit" as the only prototype methods', function () {			
-			for (proto in Qbus.prototype) {
-				if (Qbus.prototype.hasOwnProperty(proto)) {
-					actualProtos[proto] = 1;
-				}
-			}
+	assert.ok(Qbus().on('a', noop) instanceof Qbus, '.on returns `this`');
 
-			expect(expectProtos).to.deep.equal(actualProtos);
-		});
+	/**
+	 * .once
+	 */
+	assert.equal(Qbus.prototype.once.length, 2, '.once should take two arguments')
+	assert.throws(function () {
+		var times = 0,
+			expect = 4;
 
-		it('Should have "parse" as only property', function () {			
-			for (prop in Qbus) {
-				if (Qbus.hasOwnProperty(prop)) {
-					actualProps[prop] = 1;
-				}
-			}
+		try { Qbus().once(); } catch (e) { if (e instanceof TypeError) times++; }
+		try { Qbus().once('a'); } catch (e) { if (e instanceof TypeError) times++; }
+		try { Qbus().once(null, 'a'); } catch (e) { if (e instanceof TypeError) times++; }
+		try { Qbus().once(noop, 'a'); } catch (e) { if (e instanceof TypeError) times++; }
 
-			expect(expectProps).to.deep.equal(actualProps);
-		});
+		if (times === expect) {
+			throw 'ok';
+		}
+	}, '.once throws TypeError on anything other than <String|RegExp, Function>');
 
-		it('All properties and prototypes are functions', function () {			
-			for (proto in expectProtos) {
-				if (Qbus.hasOwnProperty(proto)) {
-					expect(Qbus.prototype[proto]).to.be.a('function');
-				}
-			}
+	assert.doesNotThrow(function () {
+		Qbus().once('a', noop);
+		Qbus().once(/[a-z]/, noop);
+	}, '.once does not throw with <String|RegExp, Function>');
 
-			for (prop in expectProps) {
-				if (Qbus.hasOwnProperty(prop)) {
-					expect(Qbus[prop]).to.be.a('function');
-				}
-			}
-		});
-	});
+	assert.ok(Qbus().once('a', noop) instanceof Qbus, '.once returns `this`');
 
-	describe('(new Qbus()).on', function () {
-		it('Should equal Qbus.prototype.on', function () {
-			expect(qbus.on).to.equal(Qbus.prototype.on);
-		});
+	/**
+	 * .off
+	 */
+	assert.equal(Qbus.prototype.off.length, 2, '.off should take two arguments');
+	assert.throws(function () {
+		var times = 0,
+			expect = 3;
 
-		it('Should take two arguments', function () {
-			expect(Qbus.prototype.on.length).to.equal(2);
-		});
+		try { Qbus().off(); } catch (e) { if (e instanceof TypeError) times++; }
+		try { Qbus().off(null, 'a'); } catch (e) { if (e instanceof TypeError) times++; }
+		try { Qbus().off(noop); } catch (e) { if (e instanceof TypeError) times++; }
 
-		it('Should throw TypeError on anything other than <String|RegExp, Function>', function () {
-			expect(function () {
-				(new Qbus).on();
-				(new Qbus).on('a');
-				(new Qbus).on(null, 'a');
-				(new Qbus).on(noop, 'a');
-			}).to.throw(TypeError);
+		if (times === expect) {
+			throw 'ok';
+		} console.log(times);
+	}, '.off throws TypeError on anything other than <String|RegExp[, Function]>');
 
-			expect(function () {
-				(new Qbus).on('a', noop);
-				(new Qbus).on(/[a-z]/, noop);
-			}).to.not.throw(TypeError);
-		});
+	assert.doesNotThrow(function () {
+		Qbus().off('a', noop);
+		Qbus().off(/[a-z]/, noop);
+		Qbus().off('a');
+		Qbus().off(/[a-z]/);
+	}, '.off does not throw with <String|RegExp[, Function]>')
 
-		it('Should return `this`', function () {
-			expect(qbus.on('a', noop)).to.equal(qbus);
-		});
-	});
+	assert.ok(Qbus().off('a', noop) instanceof Qbus, '.off returns `this`');
 
-	describe('(new Qbus()).once', function () {
-		it('Should equal Qbus.prototype.once', function () {
-			expect(qbus.once).to.equal(Qbus.prototype.once);
-		});
+	/**
+	 * .emit
+	 */
+	assert.equal(Qbus.prototype.emit.length, 1, '.emit should take one argument');
+	assert.throws(function () {
+		var times = 0,
+			expect = 2;
 
-		it('Should take two arguments', function () {
-			expect(Qbus.prototype.once.length).to.equal(2);
-		});
+		try { Qbus().emit(); } catch (e) { if (e instanceof TypeError) times++; }
+		try { Qbus().emit(null); } catch (e) { if (e instanceof TypeError) times++; }
 
-		it('Should throw TypeError on anything other than <String|RegExp, Function>', function () {
-			expect(function () {
-				(new Qbus).on();
-				(new Qbus).on('a');
-				(new Qbus).on(null, 'a');
-				(new Qbus).on(noop, 'a');
-			}).to.throw(TypeError);
+		if (times === expect) {
+			throw 'ok';
+		} 
+	}, '.emit throws TypeError on anything other than <String>')
 
-			expect(function () {
-				(new Qbus).on('a', noop);
-				(new Qbus).on(/[a-z]/, noop);
-			}).to.not.throw(TypeError);
-		});
+	assert.doesNotThrow(function () {
+		Qbus().emit('a');
+	}, '.emit does not throw with <String>')
 
-		it('Should return `this`', function () {
-			expect(qbus.once('a', noop)).to.equal(qbus);
-		});
-	});
+	assert.ok(Qbus().emit('a', noop) instanceof Qbus, '.emit returns `this`');
 
-	describe('(new Qbus()).off', function () {
-		it('Should equal Qbus.prototype.off', function () {
-			expect(qbus.off).to.equal(Qbus.prototype.off);
-		});
+	/**
+	 * .parse
+	 */
+	assert.equal(Qbus.parse.length, 1, '.parse should take one argument');
+	assert.throws(function () {
+		var times = 0,
+			expect = 2;
 
-		it('Should take two arguments', function () {
-			expect(Qbus.prototype.off.length).to.equal(2);
-		});
+		try { Qbus.parse(); } catch (e) { if (e instanceof TypeError) times++; }
+		try { Qbus.parse(null); } catch (e) { if (e instanceof TypeError) times++; }
 
-		it('Should throw TypeError on anything other than <String|RegExp [, Function]>', function () {
-			expect(function () {
-				(new Qbus).off();
-				(new Qbus).off('a');
-				(new Qbus).off(null, 'a');
-			}).to.throw(TypeError);
+		if (times === expect) {
+			throw 'ok';
+		} 
+	}, '.parse throws TypeError on anything other than <String|RegExp>')
 
-			expect(function () {
-				(new Qbus).off('a', noop);
-				(new Qbus).off(/[a-z]/, noop);
-			}).to.not.throw(TypeError);
-		});
+	assert.doesNotThrow(function () {
+		Qbus.parse('a');
+		Qbus.parse(/[a-z]/);
+	}, '.parse does not throw with <String>')
 
-		it('Should return `this`', function () {
-			expect(qbus.off('a', noop)).to.equal(qbus);
-		});
-	});
+	assert.ok(Qbus.parse('a') instanceof RegExp, '.parse returns `RegExp`');
 
-	describe('(new Qbus()).emit', function () {
-		it('Should equal Qbus.prototype.emit', function () {
-			expect(qbus.emit).to.equal(Qbus.prototype.emit);
-		});
+	assert.deepEqual(Qbus().qbus, {
+		paths: {},
+		parse: Qbus.parse
+	}, 'Qbus().qbus hasn\'t changed');
 
-		it('Should take one argument', function () {
-			expect(Qbus.prototype.emit.length).to.equal(1);
-		});
+	assert.deepEqual(Qbus({}), Qbus.prototype, 'Parasitic inheritence of prototypes');
+	assert.deepEqual(Qbus({}).jbus, Qbus().jbus, 'Parasitic inheritence of `.jbus`');
 
-		it('Should throw TypeError on anything other than <String|RegExp>', function () {
-			expect(function () {
-				Qbus.parse();
-				Qbus.parse(0);
-				Qbus.parse(null);
-			}).to.throw(TypeError);
-
-			expect(function () {
-				Qbus.parse('a');
-				Qbus.parse(/[a-z]/);
-			}).to.not.throw(TypeError);
-		});
-
-		it('Should return `this`', function () {
-			expect(qbus.emit('a')).to.equal(qbus);
-		});
-	});
-
-	describe('Qbus.parse', function () {
-		it('Should take one argument', function () {
-			expect(Qbus.parse.length).to.equal(1);
-		});
-
-		it('Should throw TypeError on anything other than <String|RegExp>', function () {
-			expect(function () {
-				Qbus.parse();
-				Qbus.parse(0);
-				Qbus.parse(null);
-			}).to.throw(TypeError);
-
-			expect(function () {
-				Qbus.parse('a');
-				Qbus.parse('a', 'a');
-				Qbus.parse('a', 'a', 0, true);
-			}).to.not.throw(TypeError);
-		});
-
-		it('Should return a RegExp object', function () {
-			expect(Qbus.parse('a')).to.be.instanceof(RegExp);
-		});
-	});
-
-	describe('(new Qbus()).qbus', function () {
-		it('Should be equal { path: {}, parse: Qbus.parse }', function () {
-			expect((new Qbus).qbus).to.deep.equal({
-				paths: {},
-				parse: Qbus.parse
-			});
-		});
-	});
-
-	describe('Qbus().qbus', function () {
-		it('Should be equal { path: {}, parse: Qbus.parse }', function () {
-			expect(Qbus().qbus).to.deep.equal({
-				paths: {},
-				parse: Qbus.parse
-			});
-		});
-	});
-
-	describe('Qbus(parent).qbus', function () {
-		it('Parent should equal new Qbus()', function () {
-			var parent = {};
-
-			Qbus(parent);
-
-			expect(parent).to.deep.equal(new Qbus());
-		});
-	});
+    assert.end();
 });

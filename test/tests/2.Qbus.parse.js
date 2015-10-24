@@ -1,58 +1,39 @@
 if (typeof require === 'function') {
 	Qbus = require('../../index.js');
-	expect = require('chai').expect;
+	test = require('tape');
 	testPaths = require('../testPaths.js')
 }
 
-describe('2. Qbus.parse', function () {
-	function stringifyReplacer (key, value) {
-		if (value === undefined) {
-			return 'undefined';
-		}
-
-  		return value;
+function stringifyReplacer (key, value) {
+	if (value === undefined) {
+		return 'undefined';
 	}
 
+	return value;
+}
+
+test('2. Jbus.parse', function (assert) {
 	testPaths.forEach(function (test) {
-		describe(test.descr, function () {
-			describe('"' + test.paths.join('", "') + '"', function () {
-				describe('Should match against', function () {
-					test.equals.forEach(function (equals) {
-						it(equals.path, function () {
-							test.paths.forEach(function (path) {
-								var res = Qbus.parse(path);
 
-								expect(res).to.be.instanceof(RegExp);
-								expect(res.query(equals.path)).to.be.an('Array');
-							});
-						});
-					});
-				});
+		assert.test(test.descr, function (assert) {
+			test.equals.forEach(function (equals) {
+				test.paths.forEach(function (path) {
+					var res = Qbus.parse(path);
 
-				describe('... and deep equal these parameters', function () {
-					test.equals.forEach(function (equals) {
-						it(JSON.stringify(equals.args, stringifyReplacer), function () {
-							test.paths.forEach(function (path) {
-								var res = Qbus.parse(path);
-
-								//console.log(equals.path , res );
-								expect(res).to.be.instanceof(RegExp);
-								expect(res.query(equals.path)).to.deep.equal(equals.args);
-							});
-						});
-					});
-				});
-
-				describe('Should not match against', function () {
-					test.unlike.forEach(function (dontMatchThisPath) {
-						it(dontMatchThisPath, function () {
-							test.paths.forEach(function (path) {
-								expect(Qbus.parse(path).query(dontMatchThisPath)).to.equal(null);
-							});
-						});
-					});
+					assert.deepEqual(res.query(equals.path), equals.args, 'Should match: ' + path + ' + '+ equals.path + ' and ' + JSON.stringify(equals.args, stringifyReplacer));
 				});
 			});
+
+			test.unlike.forEach(function (dontMatchThisPath) {
+				test.paths.forEach(function (path) {
+					assert.ok(Qbus.parse(path).query(dontMatchThisPath) === null, 'Should not match: ' + path + ' and '  + dontMatchThisPath);
+				});
+			});
+
+			assert.end();
 		});
+
 	});
+
+	assert.end();
 });

@@ -1,61 +1,61 @@
 if (typeof require === 'function') {
 	Qbus = require('../../index.js');
-	expect = require('chai').expect;
+	test = require('tape');
 	testPaths = require('../testPaths.js')
 }
 
-describe('3. Mediator', function () {
-	var qbus = function () {
-			return new Qbus();
-		},
-		noop = function () {};
+var qbus = function () {
+		return new Qbus();
+	},
+	noop = function () {};
 
-	function stringifyReplacer (key, value) {
-		if (value === undefined) {
-			return 'undefined';
-		}
-
-  		return value;
+function stringifyReplacer (key, value) {
+	if (value === undefined) {
+		return 'undefined';
 	}
 
+	return value;
+}
 
-	testPaths.forEach(function (testPath) {
-		describe(testPath.descr, function () {
-			testPath.paths.forEach(function (path) {
+test('3. Mediator routing', function (assert) {
+	testPaths.forEach(function (test) {
 
-				describe("qbus.on('" + path + "', handler);", function () {
-					testPath.equals.forEach(function (equals) {
-						var emitArgs = [0, 'a', {}],
-							withArgs = [].concat(equals.args, emitArgs);
+		assert.test(test.descr, function (assert) {
 
-						it("Should invoke on qbus.emit('" + equals.path + "', " + JSON.stringify(emitArgs) + ") with params " + JSON.stringify(withArgs, stringifyReplacer), function () {
-							var calls = 0,
-								args,
-								_qbus = qbus();
+			test.equals.forEach(function (equals) {
+				var emitArgs = [0, 'a', {}],
+					withArgs = [].concat(equals.args, emitArgs);
 
-							_qbus.on(path, function () {
-								calls++;
-								args = Array.prototype.slice.call(arguments);
-							}).emit.apply(_qbus, [].concat(equals.path, emitArgs));
+				test.paths.forEach(function (path) {
+					var calls = 0,
+						args,
+						_qbus = qbus();
 
-							expect(calls).to.equal(1);
-							expect(args).to.deep.equal(withArgs);
-						});
-					});
+					_qbus.on(path, function () {
+						calls++;
+						args = Array.prototype.slice.call(arguments);
+					}).emit.apply(_qbus, [].concat(equals.path, emitArgs));
 
-					testPath.unlike.forEach(function (unlike) {
-						it("Should not execute on qbus.emit('" + unlike + "')", function () {
-							var calls = 0;
-
-							qbus().on(path, function () {
-								calls++;
-							}).emit(unlike);
-
-							expect(calls).to.equal(0);
-						});
-					});
+					assert.deepEqual(args, withArgs, "Should run and args deepEqual: on('" + path + "').emit('"+ equals.path + "', " + JSON.stringify(equals.args, stringifyReplacer) + ")");
 				});
 			});
+
+			test.unlike.forEach(function (negPath) {
+				test.paths.forEach(function (path) {
+					var calls = 0,
+						_qbus = qbus();
+
+					_qbus.on(path, function () {
+						calls++;
+					}).emit(negPath);
+
+					assert.equal(calls, 0, "Should not run: on('" + path + "').emit('" + negPath + "')");
+				});
+			});
+
+			assert.end();
 		});
 	});
+
+	assert.end();
 });
