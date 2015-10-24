@@ -27,6 +27,7 @@
 		"hub",
 		"bus",
 		"message",
-		"messaging"
+		"messaging",
+		"isomorphic"
 	]
 }
