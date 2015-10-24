@@ -122,6 +122,7 @@ var testPaths = [
 			'/a/some/thing/b',
 			'some/thing/b/',
 			'/a/some/thing/b/',
+			'', 
 			'/',
 			'//'
 		]
