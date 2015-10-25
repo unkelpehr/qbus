@@ -1,11 +1,12 @@
 # qbus
 
-  - Dynamic queries `/:capture/`, `/:optionalCapture?/`, `/wild*ards/`, `/^RegExp(.*)`
+  - Dynamic queries `/:capture/`, `/:optionalCapture?/`, `/wild*ards/`, `/^RegExp(.*)/i`
   - AMD & CommonJS compatible
   - Works in browser and Node completely without hacks, polyfills etc
   - Extensive test suite with 1.000+ tests
   - No dependencies - one file
   - Built in parasitic inheritence
+  - Small (~1.5KB gzipped)
 
 ```js
 bus.on('/entries/get/:id?', function (id, res) {
