@@ -40,7 +40,7 @@ The context for all `handler` function is the Qbus object or the `parent` object
     };
 ```
 
-When an event is to be emitted the handlers is only a key away:
+When a event is to be emitted the handlers is only a key away:
 
 ```js
 function emit (event, args) {
@@ -61,11 +61,11 @@ We can't do this. Because our listeners are listening to e.g. `/admin/users/:use
 
 ```js
 var subscriptions = [
-    { re: //, handler: Function },
-    { re: //, handler: Function },
-    { re: //, handler: Function },
-    { re: //, handler: Function },
-    { re: //, handler: Function },
+    { re: /.*/, handler: Function },
+    { re: /.*/, handler: Function },
+    { re: /.*/, handler: Function },
+    { re: /.*/, handler: Function },
+    { re: /.*/, handler: Function },
     ...
 ];
 ```
@@ -83,18 +83,18 @@ function emit (query, args) {
 }
 ```
 
-So if we the have ten listeners each on `/admin/users`, `/admin/groups`, `/admin/articles` every emit against `/admin/users` will have to be matched against 30 RegExp objects before running out.
+So if we have ten listeners each on `/admin/users`, `/admin/groups`, `/admin/articles` every emit against `/admin/users` will have to be matched against 30 RegExp objects before running out.
 
 ##### What we can do about it
 The first thing Qbus does to crank up the ops/s is to use string comparison instead of RegExp.exec if the listener-query doesn't use any modifiers.
 
-The second thing is we do is to break out the fixed part of the query and store them individually. So instead of the mega-array mentioned above we can pinpoint and check multiple, smaller arrays for more exact matching.
+The second thing we do is to break out the fixed part of the query and store them individually. So instead of the mega-array mentioned above we can pinpoint and check multiple, smaller arrays for more exact matching.
 
 ```js
 var subscriptions = {
-    '/admin/users/: [{re: //, handler: Function}, {re: //, handler: Function},...],
-    '/admin/groups/: [{re: //, handler: Function}, {re: //, handler: Function}, ...],
-    '/admin/articles/: [{re: //, handler: Function}, {re: //, handler: Function} ...],
+    '/admin/users/: [{re: /.*/, handler: Function}, {re: /.*/, handler: Function},...],
+    '/admin/groups/: [{re: /.*/, handler: Function}, {re: /.*/, handler: Function}, ...],
+    '/admin/articles/: [{re: /.*/, handler: Function}, {re: /.*/, handler: Function} ...],
 };
 ```
 
