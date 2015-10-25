@@ -152,11 +152,12 @@ var subscriptions = {
 
 ```js
 function emit (query, args) {
-    // getFixed("/admin/users/joe/:doWhat/:withWhat?") => "/admin/users/joe"
-    var fixed = getFixed(query),
-        needle = fixed,
+    var needle,
         handlers,
         i;
+    
+    // getFixed("/admin/users/joe/:doWhat/:withWhat?") => "/admin/users/joe"
+    needle = getFixed(query);
     
     while (needle) {
         if (!(handlers = subscriptions[needle])) {
@@ -194,9 +195,9 @@ bus.on('/admin/users/joe', function () {
 ```
 
 ##### What get stored at "/"?
-Everything that doesn't begin with a fixed portion. I.e. `on('/*/')`, `on('/*stuff/')` but also all pure RegExp subscriptions. 
+Everything that doesn't begin with a predeterminable portion. I.e. `on('/*')`, `on('/*stuff/')`, `on('/:page')` but also all pure RegExp subscriptions. You'd want to keep this collection small as they will always have to be matched against.
 
-You can check how your queries are being stored by logging `bus.jbus.paths`.
+You can check how your queries are being stored by logging `bus.qbus.paths`.
 
 ### Usage
 ```js
