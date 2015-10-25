@@ -26,11 +26,27 @@ Queries can be anything but Qbus is built with a "path-based" approach for routi
 
 Frontslashes at the beginning and end of the query is ignored. I.e. these queries are identical: `/get/stuff/`, `get/stuff/`, `/get/stuff`, `get/stuff`. The only exception to this rule is when working with wildcards - more on that below.
 
-All queries are as of now case insensitive, an option to control that will come in the future.
+All queries are as of now case insensitive, an option to control that will probably come in the future.
 
 The context for all `handler` functions is the Qbus object or the `parent` object that was passed to the Qbus constructor (more on that under _Parasitic inheritence_).
 
-#### Wondering how Qbus interprets your queries?
+Params extracted from the query will be the first arguments to the `handler` function. Subsequent arguments comes from the emitter:
+
+```js
+bus.on('/:a/:b/:c', function () {
+    console.log(arguments); // [a, b, c, d, e, f]
+}).emit('/a/b/c/', 'd', 'e', 'f');
+```
+
+Optional captures is still passed as an argument to keep the arguments object consistent, but their value is set to `undefined`:
+```js
+bus.on('/:a/:b?/:c?', function () {
+    console.log(arguments); // [a, undefined, undefined, d, e, f]
+}).emit('/a/', 'd', 'e', 'f');
+```
+
+
+##### Wondering how Qbus interprets your queries?
 The `parse` function is exposed in the non-enumerable property "qbus":
 
 ```js
@@ -41,7 +57,7 @@ console.log(regexp instanceof RegExp, regexp);
 // true { /^/?users/([^/]+?)/?$/i query: [Function: execQuery] }
 ```
 
-#### What's `query` doing there?
+##### What's `query` doing there?
 When matching regex the first match is always the whole string. I.e.
 ```js
 /^/?users/([^/]+?)/?$/i.exec('/users/13'); => ['/users/13', '13']
