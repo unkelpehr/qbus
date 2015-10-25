@@ -176,7 +176,7 @@ myLib.on('stuff', function () {
 }).emit('stuff');
 ```
 
-##### ```.on(<`query`= String|RegExp>, <`handler` = Function>```
+##### .on(<`query`= String|RegExp>, <`handler` = Function>
 Let `handler` execute on given `query`.
 ```js
 bus.on('/users/update', function (user, changes, respond) {
@@ -186,7 +186,7 @@ bus.on('/users/update', function (user, changes, respond) {
 ```
 
 ##### .emit(<`query`= String>[, <`arg1` = *>, <`arg2` = *>, ...]>
-Execute all handlers that matches `query`. Arguments after the mandatory first will be passed to each handler.
+Execute all handlers that matches `query`. Arguments after the mandatory first `query` will be passed to each handler.
 ```js
 bus.emit('/users/update', userObject, {
     name: 'New name'
@@ -200,14 +200,17 @@ bus.emit('/users/update', userObject, {
 Remove all listeners with a query that matches `query` and a handler that matches `handler`. If `handler` is undefined all subscriptions for `query` will be removed.  
 ```js
 // Remove all listeners for '/users/update'
-bus.emit('/users/update');
+bus.off('/users/update');
+
+// Remove all listeners for '/users/update' with 'handleUserUpdate' as handler.
+bus.off('/users/update', handleUserUpdate);
 ```
 
 ##### .once(<`query`= String|RegExp>[, <`handler` = Function>]>
 Identical to `on` but the handler will only execute once.
 ```js
-// `handleUpdate` will only execute once
-bus.on('/users/update', handleUpdate).emit('/users/update').emit('/users/update');
+// `handleUserUpdate` will only execute once
+bus.once('/users/update', handleUserUpdate).emit('/users/update').emit('/users/update');
 ```
 #### RegExp queries
 Strings and RegExp expressions are interchangable.
@@ -224,7 +227,7 @@ Qbus supports three modifiers:
   - /wildcard*
 
 #### /:capture
-Mandatory capture of everyhing between the first frontslash and the next or end of string.
+Mandatory capture of everything between the first frontslash (or beginning of string) and the next frontslash (or end of string).
 ```js
 bus.on('/sysinfo/get/:prop', function (prop) {
     if (prop === 'memoryUsage') { ... }
