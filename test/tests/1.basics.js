@@ -1,7 +1,9 @@
-var Qbus = require('../../index.js'),
-	test = require('tape'),
+if (typeof require === 'function') {
+	Qbus = require('../../index.js');
+	test = require('tape');
+}
 
-	expectProtos = { 'on': 1, 'once': 1, 'off': 1, 'emit': 1},
+var expectProtos = { 'on': 1, 'once': 1, 'off': 1, 'emit': 1},
 	actualProtos = {},
 	proto,
 
