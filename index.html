@@ -1,0 +1,236 @@
+<html>
+	<head>
+		<title>qbus browser testing</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<script src="qbus.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+
+		<!-- Latest compiled and minified CSS -->
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
+
+		<!-- Optional theme -->
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css" integrity="sha384-aUGj/X2zp5rLCbBxumKTCw2Z50WgIr1vs/PFN4praOTvYXWlVyh2UtNUU0KAUhAX" crossorigin="anonymous">
+
+		<!-- Latest compiled and minified JavaScript -->
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js" integrity="sha512-K1qjQ+NcF2TYO/eI3M6v8EiNYZfA95pQumfvcVrTHtwQVDG+aHRqLi/ETn2uB+1JqwYqVG3LIvdm9lj6imS/pQ==" crossorigin="anonymous"></script>
+
+		<style>
+		body {
+			font-family: Tahoma,"Helvetica Neue",Helvetica,Arial,sans-serif;
+			font-size: 16px;
+			color: #333333;
+		}
+		.main {
+			width: 600px;
+			margin: 0 auto;
+			margin-top: 50px;
+		}
+		input[disabled] {
+			z-index: 1;
+		    background: #fff !important;
+		}
+		i {
+			position: absolute;
+			pointer-events: none;
+			top:0;
+			left:0;
+			bottom:0;
+			width: 75px;
+			overflow:hidden;
+			z-index: 2;
+			line-height: 32px;
+			padding-left:10px;
+			border-right: 1px solid #eee;
+		}
+		.withico {
+			position: relative;
+		}
+		.withico input {
+			padding-left: 80px;
+		}
+		.success {
+			color: #fff;
+			background-color: #5cb85c;
+		}
+		.nosuccess {
+		    color: #fff;
+		    background-color: #d9534f;
+		}
+		</style>
+	</head>
+	<body>
+
+	<div class="main">
+		<div class="form-group">
+			<label for="query">Type or choose a query to test</label>
+
+			<div class="input-group">
+				<input type="text" class="form-control" aria-label="..." id="query">
+				<div class="input-group-btn">
+					<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Choose <span class="caret"></span></button>
+					<ul id="prequeries" class="dropdown-menu dropdown-menu-right">
+						<li><a id="def" href="#">/users/:userId?/:action</a></li>
+						<li><a href="#">/debug*</a></li>
+						<li><a href="#">/articles/index</a></li>
+						<li><a href="#">/articles/index/:id?</a></li>
+						<li><a href="#">/*/</a></li>
+					</ul>
+				</div>
+			</div>
+		</div>
+
+		<hr>
+
+		<div class="form-group">
+			<label for="normalized">Normalized</label>
+			<p>First thing that happens is that Qbus normalizes the input. This includes trimming of slashes and converting double slashes to singles.</p>
+			<input type="text" disabled class="form-control" id="normalized">
+		</div>
+
+		<div class="form-group">
+			<label for="static">Static portion</label>
+			<p>With the query normalized qbus determines the static portion of the query. This will be used to optimize listener lookup.</p>
+			<input type="text" disabled class="form-control" id="static">
+		</div>
+
+		<div class="form-group">
+			<label for="interpretation">Interpretation</label>
+			<p>If it's a static query qbus will optimize matching by using string comparison instead of RegExp. Dynamic queries has to be interpreted before we continue to the next step.</p>
+
+			<div class="withico">
+				<i id="method">RegExp</i>
+				<input type="text" disabled class="form-control" id="interpretation">
+			</div>
+		</div>
+
+		<div class="form-group">
+			<label for="finalized">Finalization</label>
+			<p>Dynamic queries will be converted to RegExp and static queries will remain strings.</p>
+
+			<input type="text" disabled class="form-control" id="finalized">
+		</div>
+
+		<div class="form-group">
+			<label for="tryit">Try it!</label>
+			<p>Type a path to see if it matches the query above.</p>
+
+			<input type="text" class="form-control" id="tryit" value="/users/john/update"><br>
+
+
+			<p id="args"></p>
+		</div>
+	</div>
+
+	<script>
+		var bus = new Qbus();
+		function noop () {}
+		function normalizePath (path) {
+			// Remove double slashes
+			if (path.indexOf('//') !== -1) {
+				path = path.replace(/\/+/g, '/');
+			}
+
+			// Shift slash
+			if (path[0] === '/') {
+				path = path.substr(1);
+			}
+			
+			// Pop slash
+			if (path[path.length - 1] === '/') {
+				path = path.substr(0, path.length - 1);
+			}
+
+			return path;
+		}
+
+		$query = $('#query');
+		$norm = $('#normalized');
+		$stat = $('#static');
+		$method = $('#method');
+		$interpretation = $('#interpretation');
+		$finalized = $('#finalized');
+		$tryit = $('#tryit');
+		$args = $('#args');
+
+
+		$tryit.on('keypress keyup', function () {
+			var val = $query.val(),
+				args = false;
+
+			$args.html('');
+			$tryit.removeClass('success').removeClass('nosuccess');
+
+			if (!$(this).val())  {
+				return;
+			}
+
+			bus.qbus.paths = {};
+			bus.on(val, function () {
+				args = Array.prototype.slice.call(arguments);
+			}).emit($(this).val());
+
+			if (args) {
+				$tryit.removeClass('nosuccess').addClass('success');
+
+				$args.html('Arguments: ' + JSON.stringify(args, function (key, val) {
+					if (typeof val === 'undefined') {
+						return 'undefined';
+					} else {
+						return val;
+					}
+				}) + '');
+			} else {
+				$tryit.removeClass('success').addClass('nosuccess');
+			}
+		});
+
+		$query.on('keypress keyup', function () {
+			var val = $(this).val(),
+				key,
+				entry;
+
+			bus.qbus.paths = {};
+
+			bus.on(val, noop);
+			
+			key = Object.keys(bus.qbus.paths)[0];
+			entry = bus.qbus.paths[key][0];
+
+			$norm.val(entry.input);
+			$stat.val(key);
+			$method.html(entry.expr.query ? 'RegExp' : 'String');
+
+			if (!entry.expr.query) {
+				$interpretation.val(entry.input);
+				$finalized.val(entry.input);
+			} else {
+				$interpretation.val(
+					entry.expr.source
+						.replace(/\\/g, '')
+						.replace('^/?', '')
+						.replace(/\(\?\:\/\(\[\^\/\]\+\?\)\)\?/g, '[/optional]')
+						.replace(/\/\(\[\^\/\]\+\?\)/g, '/[capture]')
+
+						.replace(/\(\.\*\?\(\?\:\(\?\=\/\$\)\|\(\?\=\$\)\)\)\?/g, '[wildcard]') // *
+						.replace(/\(\[\^\/\]\+\)\?/g, '[wildcard]/') // */
+						.replace(/\(\.\*\)\?/g, '[wildcard]')
+						.replace('/?$', '')
+						.replace(/\/+/g, '/')
+				);
+
+				$finalized.val(entry.expr.source);
+			}
+
+			$tryit.trigger('keypress');
+		});
+
+		$('#prequeries a').on('click', function () {
+			$query.val(this.innerHTML);
+			$query.trigger('keyup');
+		});
+
+		$('#def').trigger('click');
+	</script>
+	</body>
+</html>
