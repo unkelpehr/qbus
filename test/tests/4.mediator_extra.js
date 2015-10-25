@@ -5,13 +5,19 @@ if (typeof require === 'function') {
 }
 
 var qbuses = function () {
+		function Parent () {
+			Qbus.call(this, Parent.prototype);
+		}
+
 		return [
 			new Qbus(),
 			Qbus(),
 			Qbus({}),
-			new Qbus({})
+			new Qbus({}),
+			new Parent()
 		];
 	},
+	qbusesLen = qbuses().length,
 	noop = function () {};
 
 function stringifyReplacer (key, value) {
@@ -34,7 +40,7 @@ test('4. Mediator extra functionality', function (assert) {
 			}).emit('abc').emit('abc').emit('abc');
 		});
 
-		assert.equal(calls, 4, '.once(str) only execute the handler once');
+		assert.equal(calls, qbusesLen, '.once(str) only execute the handler once');
 	}());
 
 	(function () {
@@ -46,7 +52,7 @@ test('4. Mediator extra functionality', function (assert) {
 			}).emit('abc').emit('abc').emit('abc');
 		});
 
-		assert.equal(calls, 4 * 3, '.on(str) execute the handler three times with three emits');
+		assert.equal(calls, qbusesLen * 3, '.on(str) execute the handler three times with three emits');
 	}());
 
 	(function () {
@@ -97,7 +103,7 @@ test('4. Mediator extra functionality', function (assert) {
 			}).emit('/users/userId').emit('/users').emit('/users/');
 		});
 
-		assert.equal(calls, 4, '.once(expression) only execute the handler once');
+		assert.equal(calls, qbusesLen, '.once(expression) only execute the handler once');
 	}());
 
 	(function () {
@@ -109,7 +115,7 @@ test('4. Mediator extra functionality', function (assert) {
 			}).emit('/users/userId').emit('/users').emit('/users/');
 		});
 
-		assert.equal(calls, 4 * 3, '.on(expression) execute the handler three times with three emits');
+		assert.equal(calls, qbusesLen * 3, '.on(expression) execute the handler three times with three emits');
 	}());
 
 	(function () {
@@ -160,7 +166,7 @@ test('4. Mediator extra functionality', function (assert) {
 			}).emit('abc').emit('abc').emit('abc');
 		});
 
-		assert.equal(calls, 4, '.once(RegExp) only execute the handler once');
+		assert.equal(calls, qbusesLen, '.once(RegExp) only execute the handler once');
 	}());
 
 	(function () {
@@ -172,7 +178,7 @@ test('4. Mediator extra functionality', function (assert) {
 			}).emit('abc').emit('abc').emit('abc');
 		});
 
-		assert.equal(calls, 4 * 3, '.on(RegExp) execute the handler three times with three emits');
+		assert.equal(calls, qbusesLen * 3, '.on(RegExp) execute the handler three times with three emits');
 	}());
 
 	(function () {
