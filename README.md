@@ -212,7 +212,7 @@ var Qbus = require('Qbus'),
 ```
 
 ##### Parasitic inheritance
-Qbus will latch on to any object ("_parent_") passed to it's constructor. This is a simple way of extending your own modules with Qbus' functionality. Five functions will be added to `parent`: `on`, `once`, `off`, `emit` along with a non-enumerable object called `qbus`; where all the subscriptions will be stored.
+Qbus will latch on to any object ("_parent_") passed to it's constructor. This is a simple way of extending your own modules with Qbus' functionality. Four functions will be added to `parent`: `on`, `once`, `off`, `emit` along with a non-enumerable object called `qbus`; where all the subscriptions will be stored.
 ```js
 var Qbus = require('Qbus');
 
@@ -223,7 +223,7 @@ myLib.on('stuff', function () {
 }).emit('stuff');
 ```
 
-##### .on(<`query`= String|RegExp>, <`handler` = Function>
+##### .on(<`query`= String|RegExp>, <`handler` = Function>)
 Let `handler` execute on given `query`.
 ```js
 bus.on('/users/update', function (user, changes, respond) {
@@ -232,7 +232,7 @@ bus.on('/users/update', function (user, changes, respond) {
 });
 ```
 
-##### .emit(<`query`= String>[, <`arg1` = *>, <`arg2` = *>, ...]>
+##### .emit(<`query`= String>[, <`arg1` = *>, <`arg2` = *>, ...])
 Execute all handlers that matches `query`. Arguments after the mandatory first `query` will be passed to each handler.
 ```js
 bus.emit('/users/update', userObject, {
@@ -243,7 +243,7 @@ bus.emit('/users/update', userObject, {
     }
 });
 ```
-##### .off(<`query`= String|RegExp>[, <`handler` = Function>]>
+##### .off(<`query`= String|RegExp>[, <`handler` = Function>])
 Remove all listeners with a query that matches `query` and a handler that matches `handler`. If `handler` is undefined all subscriptions for `query` will be removed.  
 ```js
 // Remove all listeners for '/users/update'
@@ -253,7 +253,7 @@ bus.off('/users/update');
 bus.off('/users/update', handleUserUpdate);
 ```
 
-##### .once(<`query`= String|RegExp>[, <`handler` = Function>]>
+##### .once(<`query`= String|RegExp>, <`handler` = Function>)
 Identical to `on` but the handler will only execute once.
 ```js
 // `handleUserUpdate` will only execute once
