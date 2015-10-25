@@ -92,9 +92,21 @@ The second thing we do is to break out the fixed part of the query and store the
 
 ```js
 var subscriptions = {
-    '/admin/users/: [{re: /.*/, handler: Function}, {re: /.*/, handler: Function}, ...],
-    '/admin/groups/: [{re: /.*/, handler: Function}, {re: /.*/, handler: Function}, ...],
-    '/admin/articles/: [{re: /.*/, handler: Function}, {re: /.*/, handler: Function} ...],
+    '/admin/users/: [
+        {re: /.*/, handler: Function},
+        {re: /.*/, handler: Function},
+        ...
+    ],
+    '/admin/groups/: [
+        {re: /.*/, handler: Function},
+        {re: /.*/, handler: Function},
+        ...
+    ],
+    '/admin/articles/: [
+        {re: /.*/, handler: Function},
+        {re: /.*/, handler: Function},
+        ...
+    ];
 };
 ```
 
