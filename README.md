@@ -22,13 +22,37 @@ bus.on('/entries/get/:id?', function (id, res) {
 ```
 
 ### Behaviour
-Queries can be anything but Qbus is built with a "path-based" approach for routing i.e. URLs.
+Queries can be anything but Qbus is built with a "path-based" approach for routing e.g. URLs.
 
 Frontslashes at the beginning and end of the query is ignored. I.e. these queries are identical: `/get/stuff/`, `get/stuff/`, `/get/stuff`, `get/stuff`. The only exception to this rule is when working with wildcards - more on that below.
 
 All queries are as of now case insensitive, an option to control that will come in the future.
 
-The context for all `handler` function is the Qbus object or the `parent` object that was passed to the Qbus constructor (more on that under _Parasitic inheritence_).
+The context for all `handler` functions is the Qbus object or the `parent` object that was passed to the Qbus constructor (more on that under _Parasitic inheritence_).
+
+#### Wondering how Qbus interprets your queries?
+The `parse` function is exposed in the non-enumerable property "qbus":
+
+```js
+var regexp = bus.qbus.parse('/users/:userId/');
+
+console.log(regexp instanceof RegExp, regexp);
+
+// true { /^/?users/([^/]+?)/?$/i query: [Function: execQuery] }
+```
+
+#### What's `query` doing there?
+When matching regex the first match is always the whole string. I.e.
+```js
+/^/?users/([^/]+?)/?$/i.exec('/users/13'); => ['/users/13', '13']
+```
+
+All that 'query' does is shifting the first (whole) match to give the listener exactly what it wants:
+```js
+var params = /^/?users/([^/]+?)/?$/i.query('/users/13'); => ['13']
+
+handler.apply(this, params.concat(emitArgs));
+```
 
 ### Disadvantages from using static queries
 "Ordinary" event emitters with static queries are really simple and have unprecedented speed. This is because they can store the events in a lookup-object:
