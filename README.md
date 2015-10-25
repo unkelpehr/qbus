@@ -200,6 +200,11 @@ Everything that doesn't begin with a predeterminable portion. I.e. `on('/*')`, `
 
 You can check how your queries are being stored by logging `bus.qbus.paths`.
 
+##### Sooo... how fast is it?
+That depends on the complexity and quantity of the listener base that emits has to be matched against. But as a rule of thumb - avoid queries that can't be predetermined (like the ones listed above) and use namespacing to allow Qbus to break up the listeners.
+
+My 4 year old, then upper medium-end laptop can emit('/users/4') against ('/users/:id?', noop) 500.000 times per second.
+
 ### Usage
 ```js
 var Qbus = require('Qbus'),
