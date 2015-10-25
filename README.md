@@ -231,15 +231,15 @@ myLib.on('stuff', function () {
 }).emit('stuff');
 ```
 
-And you want to add Qbus' functionality to your constructors prototype:
+Or, if you want to add Qbus' functionality to your constructors prototype:
 ```js
-var Qbus = require('Qbus');
+var $, Qbus = require('Qbus');
 
 function MyLib () {
     Qbus.call(this, MyLib.prototype);
 }
 
-var $ = new MyLib();
+$ = new MyLib();
 
 $.on('stuff', function () {
     // `this` is now `myLib`
