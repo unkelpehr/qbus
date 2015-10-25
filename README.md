@@ -206,7 +206,7 @@ var Qbus = require('Qbus'),
 ```
 
 ##### Parasitic inheritance
-Qbus will latch on to any object passed to it's constructor. This is a simple way of extending your own modules with Qbus' functionality. Five functions will be added: `on`, `once`, `off`, `emit` along with a non-enumerable object called `qbus`; where all the subscriptions will be stored.
+Qbus will latch on to any object ("_parent_") passed to it's constructor. This is a simple way of extending your own modules with Qbus' functionality. Five functions will be added to `parent`: `on`, `once`, `off`, `emit` along with a non-enumerable object called `qbus`; where all the subscriptions will be stored.
 ```js
 var Qbus = require('Qbus');
 
