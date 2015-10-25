@@ -34,10 +34,10 @@ The context for all `handler` function is the Qbus object or the `parent` object
 "Ordinary" event emitters with static queries are really simple and have unprecedented speed. This is because they can store the events in a lookup-object:
 
 ```js
-    var subscriptions = {
-        hover: [Function, Function, Function],
-        click: [Function]
-    };
+var subscriptions = {
+  hover: [Function, Function, Function],
+  click: [Function]
+};
 ```
 
 When a event is to be emitted the handlers is only a key away:
@@ -92,7 +92,7 @@ The second thing we do is to break out the fixed part of the query and store the
 
 ```js
 var subscriptions = {
-    '/admin/users/: [{re: /.*/, handler: Function}, {re: /.*/, handler: Function},...],
+    '/admin/users/: [{re: /.*/, handler: Function}, {re: /.*/, handler: Function}, ...],
     '/admin/groups/: [{re: /.*/, handler: Function}, {re: /.*/, handler: Function}, ...],
     '/admin/articles/: [{re: /.*/, handler: Function}, {re: /.*/, handler: Function} ...],
 };
@@ -100,7 +100,8 @@ var subscriptions = {
 
 ```js
 function emit (query, args) {
-    var fixed = getFixed(query), // "/admin/users/joe/:doWhat/:withWhat?" => "/admin/users/joe"
+    // getFixed("/admin/users/joe/:doWhat/:withWhat?") => "/admin/users/joe"
+    var fixed = getFixed(query),
         needle = fixed,
         handlers,
         i;
@@ -112,12 +113,13 @@ function emit (query, args) {
         
         i = 0;
         while ((sub = handlers[i++)) {
-            if (sub.regexp) {
-                if ((match = sub.regexp.exec(needle)) {
-                    sub.handler.apply(this, match.concat(args));
+            if (!sub.regexp) {
+                // Use string comparison if possible
+                if (sub.query == query) {
+                   sub.handler.apply(this, args);
                 }
-            } else if (sub.query == query) {
-                sub.handler.apply(this, args);
+            } else if ((match = sub.regexp.exec(needle)) {
+                sub.handler.apply(this, match.concat(args));
             }
         }
         
