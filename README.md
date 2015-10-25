@@ -8,16 +8,14 @@
   - Built in parasitic inheritence
   - Small (~1.5KB gzipped)
 
-**Using node?**
+**Node**
 ```sh
 $ npm install qbus
 ```
 
-**Browser?**
-<a target="_blank" href="https://marijnhaverbeke.nl/uglifyjs?utf8=on&code_url=https://raw.githubusercontent.com/unkelpehr/qbus/master/lib/index.js&header=/**%20@license%20Licenced%20under%20MIT%20-%20qbus%20-%20%C2%A92015%20Pehr%20Boman%20%3Cgithub.com/unkelpehr%3E%20*/">Get the latest version of qbus minified and ready to-go by clicking here</a>
+<a target="_blank" href="https://marijnhaverbeke.nl/uglifyjs?utf8=on&code_url=https://raw.githubusercontent.com/unkelpehr/qbus/master/lib/index.js&header=/**%20@license%20Licenced%20under%20MIT%20-%20qbus%20-%20%C2%A92015%20Pehr%20Boman%20%3Cgithub.com/unkelpehr%3E%20*/">Browser? Get the latest version of qbus minified and ready to-go here</a>
 
-
-<a href="http://unkelpehr.github.io/qbus" target="_blank">You can also try a live demo of qbus' query parser here</a>
+##### <a href="http://unkelpehr.github.io/qbus" target="_blank">You can also try a live demo of qbus' query parser here</a>
 
 ### Behaviour
 Queries can be anything but Qbus is built with a "path-based" approach for routing e.g. URLs.
