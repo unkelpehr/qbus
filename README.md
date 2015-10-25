@@ -176,10 +176,10 @@ myLib.on('stuff', function () {
 }).emit('stuff');
 ```
 
-##### .on(<`query`= String|RegExp>, <`handler` = Function>
+##### ```.on(<`query`= String|RegExp>, <`handler` = Function>```
 Let `handler` execute on given `query`.
 ```js
-bus.on('/users/update', function (user, changes, res) {
+bus.on('/users/update', function (user, changes, respond) {
     // Do stuff with user
     respond('OK');
 });
