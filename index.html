@@ -3,7 +3,8 @@
 		<title>qbus browser testing</title>
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<script src="http://unkelpehr.github.io/qbus/lib/index.js"></script>
+		<!--<script src="http://unkelpehr.github.io/qbus/lib/index.js"></script>-->
+		<script src="lib/index.js"></script>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
 
 		<!-- Latest compiled and minified CSS -->
@@ -72,11 +73,13 @@
 				<div class="input-group-btn">
 					<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Choose <span class="caret"></span></button>
 					<ul id="prequeries" class="dropdown-menu dropdown-menu-right">
-						<li><a id="def" href="#">/users/:userId?/:action</a></li>
-						<li><a href="#">/debug*</a></li>
-						<li><a href="#">/articles/index</a></li>
-						<li><a href="#">/articles/index/:id?</a></li>
-						<li><a href="#">/*/</a></li>
+						<li><a data-tryit="/users/john/update" href="#">/users//:userId?/:action</a></li>
+						<li><a data-tryit="debug/hello/world?" href="#">/debug/*</a></li>
+						<li><a data-tryit="/articles/index" href="#">/articles/index</a></li>
+						<li><a data-tryit="articles/index" href="#">/articles/index/:id?</a></li>
+						<li><a data-tryit="articles/index" href="#">/articles/index/:id</a></li>
+						<li><a data-tryit="match anything up until a frontslash or end-of-string" href="#">/*/</a></li>
+						<li><a data-tryit="1ACDE" href="#">*A*C*E*</a></li>
 					</ul>
 				</div>
 			</div>
@@ -86,13 +89,13 @@
 
 		<div class="form-group">
 			<label for="normalized">Normalized</label>
-			<p>First thing that happens is that qbus normalizes the input. This includes trimming off slashes and converting double slashes to singles.</p>
+			<p>First thing that happens is that qbus normalizes the input. This includes trimming off slashes and converting double slashes into singles.</p>
 			<input type="text" disabled class="form-control" id="normalized">
 		</div>
 
 		<div class="form-group">
 			<label for="static">Static portion</label>
-			<p>With the query normalized qbus determines the static portion of the query. This will be used to optimize listener lookup.</p>
+			<p>With the query normalized qbus determines the static portion of the query. This will be used as namespacing to optimize listener lookup.</p>
 			<input type="text" disabled class="form-control" id="static">
 		</div>
 
@@ -117,7 +120,7 @@
 			<label for="tryit">Try it!</label>
 			<p>Type a path to see if it matches the query above.</p>
 
-			<input type="text" class="form-control" id="tryit" value="/users/john/update"><br>
+			<input type="text" class="form-control" id="tryit" value=""><br>
 
 
 			<p id="args"></p>
@@ -156,7 +159,7 @@
 		$args = $('#args');
 
 
-		$tryit.on('keypress keyup', function () {
+		$tryit.on('keydown keyup', function () {
 			var val = $query.val(),
 				args = false;
 
@@ -187,7 +190,7 @@
 			}
 		});
 
-		$query.on('keypress keyup', function () {
+		$query.on('keydown keyup', function () {
 			var val = $(this).val(),
 				key,
 				entry;
@@ -221,18 +224,21 @@
 						.replace(/\/+/g, '/')
 				);
 
+				// Unescape 
 				$finalized.val(entry.expr.source);
 			}
 
-			$tryit.trigger('keypress');
+			$tryit.trigger('keyup');
 		});
 
-		$('#prequeries a').on('click', function () {
+		$('#prequeries a').on('click', function (e) {
 			$query.val(this.innerHTML);
+			$tryit.val($(this).attr('data-tryit'));
 			$query.trigger('keyup');
+			e.preventDefault();
 		});
 
-		$('#def').trigger('click');
+		$('#prequeries a').first().trigger('click');
 	</script>
 	
 	<script>
