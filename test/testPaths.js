@@ -463,6 +463,149 @@ var testPaths = [
 	},
 
 	{
+		descr: 'Single surrounded wildcard, not filled',
+
+		paths: [
+			'A*C',
+			'/A*C',
+			'A*C/',
+			'/A*C/',
+		],
+
+		equals: [
+			{ path: 'AC', args: [undefined] },
+			{ path: '/AC', args: [undefined] },
+			{ path: 'AC/', args: [undefined] },
+			{ path: '/AC/', args: [undefined] },
+		],
+
+		unlike: [
+			 'AB',
+			 'ACB',
+			 'CA'
+		]
+	},
+
+	{
+		descr: 'Single surrounded wildcard, filled',
+
+		paths: [
+			'A*C',
+			'/A*C',
+			'A*C/',
+			'/A*C/',
+		],
+
+		equals: [
+			{ path: 'ABC', args: ['B'] },
+			{ path: '/ABC', args: ['B'] },
+			{ path: 'ABC/', args: ['B'] },
+			{ path: '/ABC/', args: ['B'] },
+
+			{ path: 'ACC', args: ['C'] },
+			{ path: '/ACC', args: ['C'] },
+			{ path: 'ACC/', args: ['C'] },
+			{ path: '/ACC/', args: ['C'] },
+
+			{ path: 'AAC', args: ['A'] },
+			{ path: '/AAC', args: ['A'] },
+			{ path: 'AAC/', args: ['A'] },
+			{ path: '/AAC/', args: ['A'] },
+
+			{ path: 'AABCC', args: ['ABC'] },
+			{ path: '/AABCC', args: ['ABC'] },
+			{ path: 'AABCC/', args: ['ABC'] },
+			{ path: '/AABCC/', args: ['ABC'] },
+		],
+
+		unlike: [
+			 'AB',
+			 'ACB',
+			 'CA'
+		]
+	},
+	{
+		descr: 'Multiple surrounded wildcards, not filled',
+
+		paths: [
+			'A*C*E*G',
+			'/A*C*E*G',
+			'A*C*E*G/',
+			'/A*C*E*G/',
+		],
+
+		equals: [
+			{ path: 'ACEG', args: [undefined, undefined, undefined] },
+			{ path: '/ACEG', args: [undefined, undefined, undefined] },
+			{ path: 'ACEG/', args: [undefined, undefined, undefined] },
+			{ path: '/ACEG/', args: [undefined, undefined, undefined] }
+
+		],
+
+		unlike: [
+			 'AB',
+			 'ACB',
+			 'CA'
+		]
+	},
+	{
+		descr: 'Multiple surrounded wildcards, filled',
+
+		paths: [
+			'A*C*E*G',
+			'/A*C*E*G',
+			'A*C*E*G/',
+			'/A*C*E*G/',
+		],
+
+		equals: [
+			{ path: 'ABCEG', args: ['B', undefined, undefined] },
+			{ path: '/ABCEG', args: ['B', undefined, undefined] },
+			{ path: 'ABCEG/', args: ['B', undefined, undefined] },
+			{ path: '/ABCEG/', args: ['B', undefined, undefined] },
+
+			{ path: 'ABCDEG', args: ['B', 'D', undefined] },
+			{ path: '/ABCDEG', args: ['B', 'D', undefined] },
+			{ path: 'ABCDEG/', args: ['B', 'D', undefined] },
+			{ path: '/ABCDEG/', args: ['B', 'D', undefined] },
+
+			{ path: 'ABCDEFG', args: ['B', 'D', 'F'] },
+			{ path: '/ABCDEFG', args: ['B', 'D', 'F'] },
+			{ path: 'ABCDEFG/', args: ['B', 'D', 'F'] },
+			{ path: '/ABCDEFG/', args: ['B', 'D', 'F'] },
+
+		],
+
+		unlike: [
+			 'AB',
+			 'ACB',
+			 'CA'
+		]
+	},
+	{
+		descr: 'Multiple surrounded wildcards, filled and not filled, surrounded by more wildcards',
+
+		paths: [
+			'*A*C*E*G*'
+		],
+
+		equals: [
+			{ path: 'ACEG', args: [undefined, undefined, undefined, undefined, undefined] },
+			{ path: '1ACEG', args: ['1', undefined, undefined, undefined, undefined] },
+			{ path: '1ABCEG', args: ['1', 'B', undefined, undefined, undefined] },
+			{ path: '1ABCDEG', args: ['1', 'B', 'D', undefined, undefined] },
+			{ path: '1ABCDEFG', args: ['1', 'B', 'D', 'F', undefined] },
+			{ path: '1ABCDEFG2', args: ['1', 'B', 'D', 'F', '2'] },
+
+		],
+
+		unlike: [
+			 'AB',
+			 'ACB',
+			 'CA'
+		]
+	},
+	{
 		descr: 'Frankensten queries 1',
 
 		paths: [
