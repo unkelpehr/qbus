@@ -2,75 +2,62 @@
 
   - Dynamic queries `/:capture/`, `/:optionalCapture?/`, `/wild*ards/`, `/^RegExp(.*)/i`
   - AMD & CommonJS compatible
-  - Works in browser and Node completely without hacks, polyfills etc
+  - Works in browser and node completely without hacks, polyfills etc
   - Extensive test suite with 1.500+ tests
   - No dependencies - one file
   - Built in parasitic inheritence
   - Small (~1.5KB gzipped)
+  - V8 optimized
 
-**Node**
+[TOC]
+
+<a href="http://unkelpehr.github.io/qbus" target="_blank">Try a live demo of qbus query parser here</a>
+
+##Installation
+###Node
 ```sh
 $ npm install qbus
 ```
 
-<a target="_blank" href="https://marijnhaverbeke.nl/uglifyjs?utf8=on&code_url=https://raw.githubusercontent.com/unkelpehr/qbus/master/lib/index.js&header=/**%20@license%20Licenced%20under%20MIT%20-%20qbus%20-%20%C2%A92015%20Pehr%20Boman%20%3Cgithub.com/unkelpehr%3E%20*/">Browser? Get the latest version of qbus minified and ready to-go here</a>
+###Browser
+Download the latest uncompressed in 'lib/index.js'.
+<a target="_blank" href="https://marijnhaverbeke.nl/uglifyjs?utf8=on&code_url=https://raw.githubusercontent.com/unkelpehr/qbus/master/lib/index.js&header=/**%20@license%20Licenced%20under%20MIT%20-%20qbus%20-%20%C2%A92015%20Pehr%20Boman%20%3Cgithub.com/unkelpehr%3E%20*/">Or get it compressed using UglifyJS here</a> _via <a href="https://marijnhaverbeke.nl/" target="_blank">https://marijnhaverbeke.nl/</a>_
 
-##### <a href="http://unkelpehr.github.io/qbus" target="_blank">You can also try a live demo of qbus' query parser here</a>
 
-### Behaviour
-Queries can be anything but Qbus is built with a "path-based" approach for routing e.g. URLs.
+## General
+###Terminology
+_Expressions_ are given to the _.on_ and _.once_ methods for matching incoming _queries_.
+_Queries_ are given to the _.emit_ function to be ran against the stored _expressions_ looking for a match.
 
-Frontslashes at the beginning and end of the query is ignored. I.e. these queries are identical: `/get/stuff/`, `get/stuff/`, `/get/stuff`, `get/stuff`. The only exception to this rule is when working with wildcards - more on that below.
+###Introduction
+Any string can be an expression but qbus is built with a "path-based" approach _(foo/bar/baz)_ for routing e.g. URLs.
+
+Frontslashes at the beginning and end of the query are ignored. I.e. these queries are identical: `/get/stuff/`, `get/stuff/`, `/get/stuff`, `get/stuff`. The only exception to this rule is when working with wildcards - more on that below.
 
 All queries are as of now case insensitive, an option to control that will probably come in the future.
 
-The context for all `handler` functions is the Qbus object or the `parent` object that was passed to the Qbus constructor (more on that under _Parasitic inheritence_).
+The context for all `handler` functions is the qbus object or the `parent` object that was passed to the qbus constructor (more on that under _Parasitic inheritence_).
 
 Params extracted from the query will be the first arguments to the `handler` function. Subsequent arguments comes from the emitter:
 
 ```js
-bus.on('/:a/:b/:c', function () {
-    console.log(arguments); // [a, b, c, d, e, f]
-}).emit('/a/b/c/', 'd', 'e', 'f');
+bus.on('/:one/:two?/:three', function () {
+    console.log(arguments); // ['one', 'two', 'three', 'four', 'five', 'six']
+}).emit('/one/two/three/', 'four', 'five', 'six');
 ```
 
 Optional captures is still passed as an argument to keep the arguments object consistent, but their value is set to `undefined`:
 ```js
-bus.on('/:a/:b?/:c?', function () {
-    console.log(arguments); // [a, undefined, undefined, d, e, f]
-}).emit('/a/', 'd', 'e', 'f');
+bus.on('/:one/:two?/:three', function () {
+    console.log(arguments); // ['one', undefined, 'three', 'four', 'five', 'six']
+}).emit('/one/three/', 'four', 'five', 'six');
 ```
 
-
-##### Wondering how Qbus interprets your queries?
-The `parse` function is exposed in the non-enumerable property "qbus":
-
-```js
-var regexp = bus.qbus.parse('/users/:userId/');
-
-console.log(regexp instanceof RegExp, regexp);
-
-// true { /^/?users/([^/]+?)/?$/i query: [Function: execQuery] }
-```
-
-##### What's `query` doing there?
-When matching regex the first match is always the whole string. I.e.
-```js
-/^/?users/([^/]+?)/?$/i.exec('/users/13'); => ['/users/13', '13']
-```
-
-All that 'query' does is shifting the first (whole) match to give the listener exactly what it wants:
-```js
-var params = /^/?users/([^/]+?)/?$/i.query('/users/13'); => ['13']
-
-handler.apply(this, params.concat(emitArgs));
-```
-
-### Disadvantages from using static queries
-"Ordinary" event emitters with static queries are really simple and have unprecedented speed. This is because they can store the events in a lookup-object:
+## Disadvantages from using static queries
+Basic "ordinary" event emitters with static queries are really simple and have unprecedented speed. This is because they can store the events in a lookup-object:
 
 ```js
-var subscriptions = {
+var listeners = {
   hover: [Function, Function, Function],
   click: [Function]
 };
@@ -82,7 +69,7 @@ When a event is to be emitted the handlers is only a key away:
 function emit (event, args) {
     var handlers, handler, i;
     
-    if (!(handlers = subscriptions[event])) {
+    if (!(handlers = listeners[event])) {
         return; // No listeners for this event
     }
     
@@ -93,7 +80,7 @@ function emit (event, args) {
 }
 ```
 
-We can't do this. Because our listeners are listening to e.g. `/admin/users/:userId?/:action`. What usually happens behind the scenes is that the subscriptions is added to an array which is then looped on each `emit` to match all stored subscriptions against the emitted query:
+We can't do this because our listeners are listening to e.g. `/admin/users/:userId?/:action`. What usually happens behind the scenes is that the listeners are pushed to an array which is then looped on each `emit` to match all stored expressions against the emitted query:
 
 ```js
 var subscriptions = [
@@ -111,7 +98,7 @@ function emit (query, args) {
     var sub, match, i;
     
     i = 0;
-    while ((sub = subscriptions[i++])) {
+    while ((sub = listeners[i++])) {
         if ((match = sub.re.exec(query))) {
             sub.handler.apply(this, match.concat(args));
         }
@@ -119,12 +106,12 @@ function emit (query, args) {
 }
 ```
 
-So if we have ten listeners each on `/admin/users`, `/admin/groups`, `/admin/articles` every emit against `/admin/users` will have to be matched against 30 RegExp objects before running out.
+So if we have ten listeners each on `/admin/users`, `/admin/groups` and `/admin/articles` every emit against `/admin/users` will have to be matched against 30 RegExp objects before running out.
 
-##### What we can do about it
-The first thing Qbus does to crank up the ops/s is to use string comparison instead of RegExp.exec if the listener-query doesn't use any modifiers.
+#### What we can do about it
+The first thing qbus does to crank up the emitrate is to use string comparison instead of RegExp.exec if the listener-query doesn't use any modifiers.
 
-The second thing we do is to break out the fixed part of the query and store them individually. So instead of the mega-array mentioned above we can pinpoint and check multiple, smaller arrays for more exact matching.
+The second thing we do is to extract the fixed part of the expression and use it for namespacing. So instead of the mega-array mentioned above we can pinpoint and check multiple, smaller arrays for more exact matching.
 
 ```js
 var subscriptions = {
@@ -172,41 +159,46 @@ function emit (query, args) {
             }
         }
         
-        needle = popNeedle(needle); // "admin/users/joe/"
-                                    // "admin/users/"
-                                    // "admin/"
+        needle = popNeedle(needle); // "/admin/users/joe"
+                                    // "/admin/users"
+                                    // "/admin"
                                     // "/"
     }
 }
 ```
 
-So now, instead of looping through `/admin/groups` and `/admin/articles` looking for subscriptions, we pinpointed potential subscribers and went from 30 iterations to 10 + 4. This is a huge speed improvement when the listener count is growing.
+So instead of looping through `/admin/groups` and `/admin/articles` looking for subscriptions we now pinpointed potential listeners and went from 30 iterations to 10 + 4. This is a huge speed improvement when the listener count is growing.
 
-The last functionality we can use to speed up routing is to break the loop from within a handler; the equivalent of using `e.preventDefault(); e.stopPropagation()` for DOM events. The natural drawback is that if a handler breaks at `/admin/users/joe/` no handlers at `admin/users/`, `admin/` and `/` will have a chance to execute.
+The last functionality we can use to speed up routing is to break the loop from within a handler; the equivalent of using `e.stopPropagation()` for DOM events. The natural drawback is that if a handler breaks at `/admin/users/joe/` no handlers at `admin/users/`, `admin/` and `/` will have a chance to execute.
 
 ```js
 bus.on('/admin/users/joe', function () {
-    return false; // Tell Qbus to stop the emit loop
+    return false; // Tell qbus to stop the emit loop
 });
 ```
 
-##### What get stored at "/"?
-Everything that doesn't begin with a predeterminable portion. I.e. `on('/*')`, `on('/*stuff/')`, `on('/:page')` but also all pure RegExp subscriptions. You'd want to keep this collection small as they will always have to be matched against.
+#### What get stored at "/"?
+Everything that doesn't begin with a predeterminable portion. I.e. `on('/*')`, `on('/*stuff/')`, `on('/:page')` but also all pure RegExp subscriptions. You'd want to keep this collection small as the expressions stored here will always be matched against.
 
 You can check how your queries are being stored by logging `bus.qbus.paths`.
 
-##### Sooo... how fast is it?
-That depends on the complexity and quantity of the listener base that emits has to be matched against. But as a rule of thumb - avoid queries that can't be predetermined (like the ones listed above) and use namespacing to allow Qbus to break up the listeners.
+#### Sooo... how fast is it?
+That depends a lot on the complexity and quantity of the listener base. But as a rule of thumb if speed is an issue: avoid `/`, avoid deep paths (every level needs to be checked) and keep all dynamic portions of the expressions far to the right. These for example will all be stored at the same level: `/users`, `/users/:userId?`, `/users/:userId?/:action`, `/user/*` and all has to be matched on any query with `/users` as basename.
 
-My 4 year old, then upper medium-end laptop can emit('/users/4') against ('/users/:id?', noop) 500.000 times per second.
+The amount of listeners __not__ tuning in on the same static path does not affect eachother. 1 or 1m listeners on `a` does not affect to rate of emitting against `b`.
 
-### Usage
+On this current machine, single core i5 2.90GHz processor running with W7, using a possible old qbus version when you read this:
+4,891,286 emits/sec with 1 listener and a static query
+4,749,031 emits/sec with 1 listener and a static query _and 1m listeners in another basedir_
+2,914,642 emits/sec with 1 listener and a dynamic query
+
+## Usage
 ```js
 var Qbus = require('Qbus'),
     bus = new Qbus(); // `new` keyword is optional
 ```
 
-##### Parasitic inheritance
+### Parasitic inheritance
 Qbus will latch on to any object ("_parent_") passed to it's constructor. This is a simple way of extending your own modules with Qbus' functionality. Four functions will be added to `parent`'s properties: `on`, `once`, `off`, `emit` along with a non-enumerable object called `qbus`; where all the subscriptions will be stored.
 ```js
 var Qbus = require('Qbus');
@@ -233,7 +225,7 @@ $.on('stuff', function () {
 }).emit('stuff');
 ```
 
-##### .on(<`query`= String|RegExp>, <`handler` = Function>)
+### .on(<`query`= String|RegExp>, <`handler` = Function>)
 Let `handler` execute on given `query`.
 ```js
 bus.on('/users/update', function (user, changes, respond) {
@@ -242,7 +234,7 @@ bus.on('/users/update', function (user, changes, respond) {
 });
 ```
 
-##### .emit(<`query`= String>[, <`arg1` = *>, <`arg2` = *>, ...])
+### .emit(<`query`= String>[, <`arg1` = *>, <`arg2` = *>, ...])
 Execute all handlers that matches `query`. Arguments after the mandatory first `query` will be passed to each handler.
 ```js
 bus.emit('/users/update', userObject, {
@@ -253,7 +245,7 @@ bus.emit('/users/update', userObject, {
     }
 });
 ```
-##### .off(<`query`= String|RegExp>[, <`handler` = Function>])
+### .off(<`query`= String|RegExp>[, <`handler` = Function>])
 Remove all listeners with a query that matches `query` and a handler that matches `handler`. If `handler` is undefined all subscriptions for `query` will be removed.  
 ```js
 // Remove all listeners for '/users/update'
@@ -263,13 +255,13 @@ bus.off('/users/update');
 bus.off('/users/update', handleUserUpdate);
 ```
 
-##### .once(<`query`= String|RegExp>, <`handler` = Function>)
+### .once(<`query`= String|RegExp>, <`handler` = Function>)
 Identical to `on` but the handler will only execute once.
 ```js
 // `handleUserUpdate` will only execute once
 bus.once('/users/update', handleUserUpdate).emit('/users/update').emit('/users/update');
 ```
-#### RegExp queries
+## RegExp queries
 Strings and RegExp expressions are interchangable.
 ```js
 // Catch all queries that contains 'users':
@@ -277,7 +269,7 @@ bus.on(/(.*users+?.*)/i, function (stuffThatCameAfterdebug) {
     console.log('debug:', stuffThatCameAfterDebug);
 }).off(/(.*users+?.*)/i);
 ```
-#### Expressions
+## Expressions
 Qbus supports three modifiers:
   - /:capture
   - /:optionalCapture?
@@ -299,7 +291,7 @@ bus.on('/sysinfo/get/:prop?/something/', function (prop) {
     }
 });
 ```
-#### Wildcards *
+### Wildcards *
 Matches everything at the position of the wildcard if the preceding and subsequent criteria is met. I.e.
 ```js
 // Match everything up until the end of the string.
