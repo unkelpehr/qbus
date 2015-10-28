@@ -3,29 +3,6 @@
 	'use strict';
 
 	var root = this;
-
-	/**
-	 * Helper function used for converting `arguments` object into a proper Array.
-	 * I haven't come across the leaky-arguments-deoptimization yet. Is this a problem?
-	 * When testing, the function below is 20 times faster than a local slice.call(arguments).
-	 *
-	 * @method     toArray
-	 * @param      {arguments}  args    `arguments` object
-	 * @param      {number=0}   from    Start position
-	 * @return     {Array}              A proper array
-	 */
-	function toArray (args, from) {
-		var i = from || 0,
-			x = 0,
-			l = args.length,
-			a = new Array(l - i);
-
-		for ( ; i < l; ) {
-			a[x++] = args[i++];
-		}
-
-		return a;
-	}
 	
 	/**
 	 * Normalizes given path by converting double frontslashes to singles
@@ -85,10 +62,16 @@
 	 * @return     {Null|Array>}     Null if it does not match, otherwise Array.
 	 */
 	function execQuery (query) {
-		var match;
+		var match, i, arr;
 
 		if ((match = this.exec(query))) {
-			return toArray(match, 1);
+			arr = new Array(match.length - 1);
+
+			for (i = 1; i < match.length; ++i) {
+				arr[i - 1] = match[i];
+			}
+
+			return arr;
 		}
 
 		return match;
@@ -234,22 +217,24 @@
 	function getFixed (query) {
 		var fixed, iOP, iOW;
 
-		// Get the first occurence of a wilcard or capture portion
-		iOP = (query.indexOf(':') === -1 ? -1 : query.search(/(^|\/)+?:+?[^\/]+?/));
-		iOW = (query.indexOf('*') === -1 ? -1 : query.search(/(^|\/)+?[^\/]*?\*{1}/));
+		// Search for the the first occurence of a wildcard or capture portion
+		iOP = query.search(/(^|\/)+?:+?[^\/]+?/);
+		iOW = query.search(/(^|\/)+?[^\/]*?\*{1}/);
 
+		// Both negative - static query
 		if (iOP === -1 && iOW === -1) {
-			fixed = query;
-		} else {
-			fixed = query.substr(0, Math.min(
-				iOP !== -1 ? iOP : query.length,
-				iOW !== -1 ? iOW : query.length
-			));
+			return query;
+		}
 
-			// Pop slash from fixed
-			if (fixed[fixed.length - 1] === '/') {
-				fixed = fixed.substr(0, fixed.length - 1);
-			}
+		// Extract static portion
+		fixed = query.substr(0, Math.min(
+			iOP !== -1 ? iOP : query.length,
+			iOW !== -1 ? iOW : query.length
+		));
+
+		// Pop slash
+		if (fixed[fixed.length - 1] === '/') {
+			fixed = fixed.substr(0, fixed.length - 1);
 		}
 
 		return fixed;
@@ -259,52 +244,53 @@
 	 * Attaches a new query handler for the given function.
 	 *
 	 * @method     on
-	 * @param      {String|RegExp}  query    Query to subscribe to. String or a RegExp object
-	 * @param      {Function}       handler  A function to execute when the query is matched.
+	 * @param      {String|RegExp}  expr     Expression to match against. String or a RegExp object
+	 * @param      {Function}       handler  A function to execute when the expression is matched.
 	 * @return     {Object}  `this`
 	 */
-	Qbus.prototype.on = function (query, handler) {
-		var normal,
+	Qbus.prototype.on = function (expr, handler) {
+		var paths = this.qbus.paths,
+			normal,
 			fixed,
-			isRegExp = query instanceof RegExp;
+			isRegExp = expr instanceof RegExp;
 		
-		if ((!isRegExp && typeof query !== 'string') || typeof handler !== 'function') {
+		if ((!isRegExp && typeof expr !== 'string') || typeof handler !== 'function') {
 			throw new TypeError(
-				'Usage: qbus.on(<`query` = String|RegExp>, <`handler` = Function>)\n'+
-				'Got:   qbus.on(<`' + typeof query + '` = ' + query + '>, <`' + typeof handler + '` = ' + handler + '>)'
+				'Usage: qbus.on(<`expr` = String|RegExp>, <`handler` = Function>)\n'+
+				'Got:   qbus.on(<`' + typeof expr + '` = ' + expr + '>, <`' + typeof handler + '` = ' + handler + '>)'
 			);
 		}
 
 		// Handle RegExp queries
 		if (isRegExp) {
-			(this.qbus.paths['/'] || (this.qbus.paths['/'] = [])).push({
-				input: query.source,
+			(paths['/'] || (paths['/'] = [])).push({
+				input: expr.source,
 				handler: handler,
-				expr: parse(query)
+				expr: parse(expr)
 			});
 
 			return this;
 		}
 
 		// Trim slashes and remove doubles
-		normal = normalizePath(query);
+		normal = normalizePath(expr);
 
-		fixed = getFixed(normal);
+		// Get the static portion of the expression or fallback on '/'.
+		fixed = getFixed(normal) || '/';
 
 		// Create namespace
-		// Must be stored with leading frontslash or the key would be "" on e.g. /*
-		if (!this.qbus.paths['/' + fixed]) {
-			this.qbus.paths['/' + fixed] = [];
+		if (!paths[fixed]) {
+			paths[fixed] = [];
 		}
 
 		// All done
-		this.qbus.paths['/' + fixed].push({
+		paths[fixed].push({
 			input: normal,
 			handler: handler,
 
-			// If the fixed portion of the query equals the normal
-			// then this is a simple, non-regexp query that can use string comparison.
-			expr: normal === fixed ? normal : parse(query)
+			// If the fixed portion of the expr equals the normal
+			// then this is a simple, non-regexp expr that can use string comparison.
+			expr: normal === fixed ? normal : parse(expr)
 		});
 
 		return this;
@@ -315,65 +301,67 @@
 	 * The query handler will only be called once.
 	 *
 	 * @method     on
-	 * @param      {String|RegExp}  query    Query to subscribe to. String or a RegExp object
-	 * @param      {Function}       handler  A function to execute when the query is matched.
+	 * @param      {String|RegExp}  expr     Expression to match against. String or a RegExp object
+	 * @param      {Function}       handler  A function to execute when the expression is matched.
 	 * @return     {Object}  `this`
 	 */
-	Qbus.prototype.once = function (query, handler) {
+	Qbus.prototype.once = function (expr, handler) {
 		var self = this;
 
-		if (typeof handler !== 'function' || (typeof query !== 'string' && (!query instanceof RegExp))) {
+		if (typeof handler !== 'function' || (typeof expr !== 'string' && !(expr instanceof RegExp))) {
 			throw new TypeError(
-				'Usage: qbus.once(<`query` = String|RegExp>, <`handler` = Function>)\n'+
-				'Got:   qbus.once(<`' + typeof query + '` = ' + query + '>, <`' + typeof handler + '` = ' + handler + '>)'
+				'Usage: qbus.once(<`expr` = String|RegExp>, <`handler` = Function>)\n'+
+				'Got:   qbus.once(<`' + typeof expr + '` = ' + expr + '>, <`' + typeof handler + '` = ' + handler + '>)'
 			);
 		}
 
-		return this.on(query, function temp () {
-			self.off(query, temp);
-			exec(handler, self, toArray(arguments));
+		return this.on(expr, function temp () {
+			var i = 0,
+				args = new Array(arguments.length);
+
+			for (; i < args.length; ++i) {
+				args[i] = arguments[i];
+			}
+
+			self.off(expr, temp);
+			exec(handler, self, args);
 		});
 	};
 
 	/**
-	 * Removes all subscriptions matching `query` and the optional `handler` function.
+	 * Removes all subscriptions matching `expr` and the optional `handler` function.
 	 *
 	 * @method     off
-	 * @param      {String|RegExp}  query    Query to match
+	 * @param      {String|RegExp}  expr     Expression to match
 	 * @param      {Function=}  handler      Function to match
 	 * @return     {Object}                  `this`
 	 */
-	Qbus.prototype.off = function (query, handler) {
-		var i, sub, dir, isRegExp;
+	Qbus.prototype.off = function (expr, handler) {
+		var paths = this.qbus.paths,
+			isRegExp,
+			parent,
+			i;
 
-		if ((typeof query !== 'string' && !(isRegExp = query instanceof RegExp)) || (typeof handler !== 'undefined' && typeof handler !== 'function')) {
+		if ((typeof expr !== 'string' && !(isRegExp = expr instanceof RegExp)) || (typeof handler !== 'undefined' && typeof handler !== 'function')) {
 			throw new TypeError(
-				'Usage: qbus.off(<`query` = String|RegExp>[, <`handler` = Function>])\n'+
-				'Got:   qbus.off(<`' + typeof query + '` = ' + query + '>, <`' + typeof handler + '` = ' + handler + '>)'
+				'Usage: qbus.off(<`expr` = String|RegExp>[, <`handler` = Function>])\n'+
+				'Got:   qbus.off(<`' + typeof expr + '` = ' + expr + '>, <`' + typeof handler + '` = ' + handler + '>)'
 			);
 		}
 
 		// Convert RegExp' queries to strings
 		if (isRegExp) {
-			query = query.source;
-			dir = '/';
+			expr = expr.source;
+			parent = paths['/'];
 		} else {
-			query = normalizePath(query);
-			dir = '/' + getFixed(query);
+			expr = normalizePath(expr);
+			parent = paths[getFixed(expr) || '/'];
 		}
 
-		if ((dir = this.qbus.paths[dir])) {
-			i = 0;
-			while ((sub = dir[i++])) {
-				if (sub.input === query && (!handler || sub.handler === handler)) {
-					// What's actually going on is that this function only
-					// marks the subscription as to-be-deleted.
-					// 
-					// The emit function does the actual deletion,
-					// this is because otherwise the collection of
-					// subscriptions would change if a handler caused
-					// itself or other handlers to remove themselves.
-					sub.remove = true;
+		if (parent) {
+			for (i = 0; i < parent.length; ++i) {
+				if (parent[i].input === expr && (!handler || parent[i].handler === handler)) {
+					parent.splice(--i, 1);
 				}
 			}
 		}
@@ -388,83 +376,93 @@
 	 * @param      {String}  query   The string to match against
 	 * @return     {Object}          `this`
 	 */
-	Qbus.prototype.emit = function (query /*, arg1, arg2, ... */) {
-		var qbus = this.qbus,
-			i, sub,
+	Qbus.prototype.emit = function (query) {
+		var paths = this.qbus.paths,
+			i, x,
+			sub,
 			match,
-			args,
-			level,
+			args = [],
+			parent,
 			needle,
 			returned,
-			slashEnd = '',
-			normal;
+			slashEnd,
+			normal,
+			argsLen = arguments.length;
 
+		// Get all arguments after `query` as a regular array
+		if (argsLen > 1) {
+			for (i = 1; i < argsLen; ++i) {
+				args.push(arguments[i]);
+			}
+		}
+
+		// Typecheck after converting the arguments to a regular array so we can include `args` in the message.
+		// Dropping the `arguments` bomb causes V8 bailout: Bad value context for arguments value.
 		if (typeof query !== 'string') {
 			throw new TypeError(
 				'Usage: qbus.emit(<`query` = String>[, <`arg1` = *>], <`arg2` = *>, ...)\n'+
-				'Got:   qbus.emit(<`' + typeof query + '` = ' + query + '>, ' + arguments + ')'
+				'Got:   qbus.emit(<`' + typeof query + '` = ' + query + '>, ' + args + ')'
 			);
 		}
 
-		// Get all arguments after `query` as a regular array
-		args = toArray(arguments, 1);
+		slashEnd = query[query.length - 1] == '/' ? '/' : '';
 
-		slashEnd = query[query.length - 1] === '/' ? '/' : '';
+		// `needle` will be modified while we look for listeners so
+		// `normal` will be the value that we'll compare against. 
+		needle = normal = normalizePath(query);
 
-		// Trim slashes and remove doubles
-		normal = normalizePath(query);
+		// Skip a do...while by setting `needle` to '/' if it's empty.
+		// It will be empty if the query equaled '/' before normalizePath trimmed the slashes.
+		needle = needle || '/';
 
-		needle = normal + '/';
-
-		// Loop it backwards:
-		// 'foo/bar/baz'
-		// 'foo/bar'
-		// 'foo'
-		// ''
-		// 
-		// This is because the most explicit matches should have a
-		// running chance to potentially stop the loop by returning false.
 		while (needle) {
+			parent = paths[needle];
+
+			if (parent) {
+				for (i = 0; i < parent.length; ++i) {
+					sub = parent[i];
+
+					// RegExp matching
+					if (sub.expr.query) {
+						if ((match = sub.expr.query(normal + slashEnd))) {
+							// Extend `args` into matches
+							for (x = 0; x < args.length; ++x) {
+								match.push(args[x]);
+							}
+
+							returned = exec(sub.handler, this, match);
+						}
+					} 
+
+					// String comparison
+					else if (normal == sub.expr) {
+						returned = exec(sub.handler, this, args);
+					}
+
+					// Discontinue if a handler returned false
+					if (returned === false) {
+						return this;
+					}
+				}
+			}
+
+			// Break after processing '/'
+			if (needle.length === 1) {
+				break;
+			}
+
 			// For each run we pop a part of the needle
 			// 'foo/bar/baz'.substr(0, 7) => foo/bar
-			needle = needle.substr(0, needle.lastIndexOf('/'));
-
-			// By prepending frontslash unto the key for the haystack
-			// lookup we don't need a complex condition for the while-loop
-			// to get to following behaviour:
+			// 'foo/bar'
+			// 'foo'
+			// ''
 			// 
-			// '/foo/bar/baz'
-			// '/foo/bar'
-			// '/foo'
-			// '/'
-			if (!(level = qbus.paths['/' + needle])) {
-				continue;
-			}
-
-			i = 0;
-			while ((sub = level[i++])) {
-				// Ignore and splice of subscriptions marked as to-be-deleted.
-				if (sub.remove) {
-					level.splice(--i, 1);
-				}
-
-				// RegExp subscription
-				else if (sub.expr.query) {
-					if ((match = sub.expr.query(normal + slashEnd))) {
-						returned = exec(sub.handler, this, match.concat(args));
-					}
-				} 
-
-				// String comparison
-				else if (normal == sub.expr) {
-					returned = exec(sub.handler, this, args);
-				}
-
-				// Discontinue if a handler returned false
-				if (returned === false) {
-					return this;
-				}
-			}
+			// By looping it backwards we let the most explicit listeners
+			// have a running chance to break the loop by returning false.
+			// 
+			// They are also guaranteed to be executed before a less explicit
+			// listener breaks the loop.
+			needle = needle.substr(0, needle.lastIndexOf('/')) || '/';
 		}
 
 		return this;
