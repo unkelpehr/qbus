@@ -54,8 +54,10 @@ bus.on('/:one/:two?/:three', function () {
 }).emit('/one/three/', 'four', 'five', 'six');
 ```
 
-## Disadvantages from using static queries
-Basic "ordinary" event emitters with static queries are really simple and have unprecedented speed. This is because they can store the events in a lookup-object:
+## Disadvantages from using a regular eventemitter
+The advantages of dynamic queries ("_events"_) are many. But what are the disadvantages?
+
+Event emitters with static _event names_ are really simple and have unprecedented speed. This is because they can store the event handlers in a `key: [_handlers_]`-fashion:
 
 ```js
 var listeners = {
