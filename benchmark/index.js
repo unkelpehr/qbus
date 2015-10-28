@@ -28,7 +28,7 @@ console.log('Each run consists of ' + queries.simple.length + ' emits against ' 
 suite
 	.add('qbus 1', function () {
 		queries.simple.forEach(function (query) {
-		qbus1.emit(query, 'a', 'b', 'c');
+			qbus1.emit(query, 'a', 'b', 'c');
 		});
 	})
 	.add('qbus 2', function() {

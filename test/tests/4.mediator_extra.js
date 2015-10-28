@@ -56,11 +56,12 @@ test('4. Mediator extra functionality', function (assert) {
 	}());
 
 	(function () {
-		var calls = 0,
+		var h1calls = 0,
+			h2calls = 0,
 			handler1 = function () {
-				calls++;
+				h1calls++;
 			}, handler2 = function () {
-				calls++;
+				h2calls++;
 			};
 
 		qbuses().forEach(function (qbus) {
@@ -71,7 +72,7 @@ test('4. Mediator extra functionality', function (assert) {
 				.emit('abc');
 		});
 
-		assert.equal(calls, qbuses().length, '.off(str) should only remove the subs with the specified handler');
+		assert.equal(h1calls, 0, '.off(str) should only remove the subs with the specified handler');
 	}());
 
 	(function () {
@@ -119,11 +120,12 @@ test('4. Mediator extra functionality', function (assert) {
 	}());
 
 	(function () {
-		var calls = 0,
+		var h1calls = 0,
+			h2calls = 0,
 			handler1 = function () {
-				calls++;
+				h1calls++;
 			}, handler2 = function () {
-				calls++;
+				h2calls++;
 			};
 
 		qbuses().forEach(function (qbus) {
@@ -134,7 +136,7 @@ test('4. Mediator extra functionality', function (assert) {
 				.emit('/users/userId');
 		});
 
-		assert.equal(calls, qbuses().length, '.off(expression) should only remove the subs with the specified handler');
+		assert.equal(h1calls, 0, '.off(expression) should only remove the subs with the specified handler');
 	}());
 
 	(function () {
@@ -182,11 +184,12 @@ test('4. Mediator extra functionality', function (assert) {
 	}());
 
 	(function () {
-		var calls = 0,
+		var h1calls = 0,
+			h2calls = 0,
 			handler1 = function () {
-				calls++;
+				h1calls++;
 			}, handler2 = function () {
-				calls++;
+				h2calls++;
 			};
 
 		qbuses().forEach(function (qbus) {
@@ -197,7 +200,7 @@ test('4. Mediator extra functionality', function (assert) {
 				.emit('abc');
 		});
 
-		assert.equal(calls, qbuses().length, '.off(RegExp) should only remove the subs with the specified handler');
+		assert.equal(h1calls, 0, '.off(RegExp) should only remove the subs with the specified handler');
 	}());
 
 	(function () {
