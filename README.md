@@ -20,7 +20,8 @@ $ npm install qbus
 ```
 
 ###Browser
-Download the latest uncompressed in 'lib/index.js'.
+Download the latest uncompressed version in _<a href="https://github.com/unkelpehr/qbus/blob/master/lib/index.js">lib/index.js</a>_.
+
 <a target="_blank" href="https://marijnhaverbeke.nl/uglifyjs?utf8=on&code_url=https://raw.githubusercontent.com/unkelpehr/qbus/master/lib/index.js&header=/**%20@license%20Licenced%20under%20MIT%20-%20qbus%20-%20%C2%A92015%20Pehr%20Boman%20%3Cgithub.com/unkelpehr%3E%20*/">Or get it compressed using UglifyJS here</a> _via <a href="https://marijnhaverbeke.nl/" target="_blank">https://marijnhaverbeke.nl/</a>_
 
 
