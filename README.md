@@ -190,9 +190,9 @@ The amount of listeners __not__ tuning in on the same static path does not affec
 
 On this current machine, single core i5 2.90GHz processor running with W7, using a possible old qbus version when you read this:
 
-4,891,286 emits/sec with 1 listener and a static query
-4,749,031 emits/sec with 1 listener and a static query _and 1m listeners in another basedir_
-2,914,642 emits/sec with 1 listener and a dynamic query
+4,891,286 emits/sec with 1 listener and a static query<br>
+4,749,031 emits/sec with 1 listener and a static query _and 1m listeners in another basedir_<br>
+2,914,642 emits/sec with 1 listener and a dynamic query<br>
 
 ## Usage
 ```js
