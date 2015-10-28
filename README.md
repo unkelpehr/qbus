@@ -189,6 +189,7 @@ That depends a lot on the complexity and quantity of the listener base. But as a
 The amount of listeners __not__ tuning in on the same static path does not affect eachother. 1 or 1m listeners on `a` does not affect to rate of emitting against `b`.
 
 On this current machine, single core i5 2.90GHz processor running with W7, using a possible old qbus version when you read this:
+
 4,891,286 emits/sec with 1 listener and a static query
 4,749,031 emits/sec with 1 listener and a static query _and 1m listeners in another basedir_
 2,914,642 emits/sec with 1 listener and a dynamic query
