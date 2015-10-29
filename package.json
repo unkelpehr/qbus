@@ -1,7 +1,7 @@
 {
   "name": "qbus",
   "description": "Minimalistic and fast isomorphic mediator with dynamic queries",
-  "version": "v0.9.5",
+  "version": "v0.9.7",
   "author": "Pehr Boman <unkelpehr@gmail.com>",
   "homepage": "https://github.com/unkelpehr/qbus",
   "license": "MIT",
