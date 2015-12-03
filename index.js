@@ -1,1 +1,3 @@
-module.exports = require('./lib');
+var Qbus = require('./lib');
+
+module.exports = Qbus;

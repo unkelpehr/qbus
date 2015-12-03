@@ -6,14 +6,13 @@ if (typeof require === 'function') {
 
 var qbuses = function () {
 		function Parent () {
-			Qbus.call(this, Parent.prototype);
+			Qbus.call(this, null, Parent.prototype);
 		}
-
+		
 		return [
 			new Qbus(),
 			Qbus(),
-			Qbus({}),
-			new Qbus({}),
+			Qbus(),
 			new Parent()
 		];
 	},

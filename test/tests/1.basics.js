@@ -28,7 +28,7 @@ for (prop in Qbus) {
 test('Basics', function (assert) {
 
 	assert.equal(typeof Qbus, 'function', 'Qbus is a function');
-	assert.equal(Qbus.length, 1, 'Qbus takes one argument');
+	assert.equal(Qbus.length, 2, 'Qbus takes two arguments');
 	assert.ok(Qbus() instanceof Qbus, 'Qbus can be called without the `new` keyword');
 	assert.deepEqual(expectProtos, actualProtos, 'Qbus has "on", "once", "off" and "emit" as the only prototype methods');
 	assert.deepEqual(expectProps, actualProps, 'Qbus has "parse" as the only property');
@@ -156,11 +156,25 @@ test('Basics', function (assert) {
 
 	assert.deepEqual(Qbus().qbus, {
 		paths: {},
-		parse: Qbus.parse
+		parse: Qbus.parse,
+		parent: null
 	}, 'Qbus().qbus hasn\'t changed');
 
-	assert.deepEqual(Qbus({}), Qbus.prototype, 'Parasitic inheritence of prototypes');
-	assert.deepEqual(Qbus({}).jbus, Qbus().jbus, 'Parasitic inheritence of `.jbus`');
+	function Parent () {
+		Qbus.call(this, null, Parent.prototype);
+	}
+
+	var p = new Parent();
+
+	assert.deepEqual({
+		on: p.on,
+		once: p.once,
+		emit: p.emit,
+		off: p.off
+	}, Qbus.prototype, 'Parasitic inheritence of prototypes');
+
+
+	assert.deepEqual(p.qbus, Qbus().qbus, 'Parasitic inheritence of `.qbus`');
 
     assert.end();
 });
